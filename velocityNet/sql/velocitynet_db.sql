@@ -101,7 +101,7 @@ CREATE TABLE `customer` (
   `state` varchar(2) DEFAULT NULL,
   `zip_code` varchar(10) DEFAULT NULL,
   `phone_number` varchar(20) DEFAULT NULL,
-  `customer_password` varchar(50) DEFAULT NULL
+  `customer_password` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 --
@@ -125,7 +125,7 @@ DROP TABLE IF EXISTS `employees`;
 CREATE TABLE `employees` (
   `employee_id` int(11) NOT NULL,
   `user_id` varchar(50) NOT NULL,
-  `employee_password` varchar(50) NOT NULL,
+  `employee_password` varchar(255) NOT NULL,
   `first_name` varchar(50) NOT NULL,
   `last_name` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,

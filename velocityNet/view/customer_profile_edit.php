@@ -4,8 +4,10 @@
 
 require_once(__DIR__ . "/../controller/auth_controller.php");
 require_once(__DIR__ . "/../model/customerDB.php");
+require_once(__DIR__ . "/../model/Database.php");
 
 AuthController::startSession();
+AuthController::enforceCurrentPageAccess();
 
 $customerIdNumber = isset($_SESSION["user_id"]) ? (int)$_SESSION["user_id"] : 0;
 
@@ -44,22 +46,40 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         if ($customer == null) {
             $formMessage = "Customer record not found.";
             $formMessageType = "error";
-        } else if ($customer->getPasswordHash() !== $currentPasswordText) {
-            $currentPasswordError = "Current password is incorrect.";
         } else {
 
-            $ok = updateCustomerPassword($customerIdNumber, $newPasswordText);
+            $okCurrent = AuthController::verifyPasswordAndUpgradeIfNeeded(
+                $currentPasswordText,
+                $customer->getPasswordHash(),
+                $customer->getCustomerId(),
+                function($id, $newHash) {
+                    $db = new Database();
+                    $conn = $db->getDbConn();
+                    if ($conn == false) return false;
+                    $sql = "update customer set customer_password = ? where customer_id = ?";
+                    $stmt = mysqli_prepare($conn, $sql);
+                    if ($stmt == false) return false;
+                    mysqli_stmt_bind_param($stmt, "si", $newHash, $id);
+                    return mysqli_stmt_execute($stmt);
+                }
+            );
 
-            if ($ok) {
-                $formMessage = "Password updated.";
-                $formMessageType = "success";
-
-                $currentPasswordText = "";
-                $newPasswordText = "";
-                $confirmPasswordText = "";
+            if (!$okCurrent) {
+                $currentPasswordError = "Current password is incorrect.";
             } else {
-                $formMessage = "Password could not be updated.";
-                $formMessageType = "error";
+                $ok = updateCustomerPassword($customerIdNumber, $newPasswordText);
+
+                if ($ok) {
+                    $formMessage = "Password updated.";
+                    $formMessageType = "success";
+
+                    $currentPasswordText = "";
+                    $newPasswordText = "";
+                    $confirmPasswordText = "";
+                } else {
+                    $formMessage = "Password could not be updated.";
+                    $formMessageType = "error";
+                }
             }
         }
     }

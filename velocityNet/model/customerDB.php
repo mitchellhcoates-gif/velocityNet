@@ -6,6 +6,7 @@
 // Use __DIR__ so this works no matter what file included us.
 require_once(__DIR__ . "/Database.php");
 require_once(__DIR__ . "/Customer.php");
+require_once(__DIR__ . "/../controller/auth_controller.php");
 
 class CustomerDB {
 
@@ -37,6 +38,8 @@ class CustomerDB {
         if ($conn == false) return false;
 
         
+        $passwordHash = AuthController::hashPassword($passwordText);
+
         $sql = "insert into customer
                 (email, first_name, last_name, street_address, city, state, zip_code, phone_number, customer_password)
                 values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
@@ -56,7 +59,7 @@ class CustomerDB {
             $stateText,
             $zipCodeText,
             $phoneNumberText,
-            $passwordText
+            $passwordHash
         );
 
         return mysqli_stmt_execute($statement);
@@ -159,6 +162,8 @@ class CustomerDB {
         $conn = $db->getDbConn();
         if ($conn == false) return false;
 
+        $passwordHash = AuthController::hashPassword($passwordText);
+
         /*
             SQL updates the password for one customer.
         */
@@ -169,7 +174,7 @@ class CustomerDB {
         $statement = mysqli_prepare($conn, $sql);
         if ($statement == false) return false;
 
-        mysqli_stmt_bind_param($statement, "si", $passwordText, $customerIdNumber);
+        mysqli_stmt_bind_param($statement, "si", $passwordHash, $customerIdNumber);
         return mysqli_stmt_execute($statement);
     }
 

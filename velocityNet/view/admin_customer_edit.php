@@ -3,6 +3,10 @@
 // Updates one customer record.
 
 require_once(__DIR__ . "/../controller/customer_controller.php");
+require_once(__DIR__ . "/../controller/auth_controller.php");
+
+AuthController::startSession();
+AuthController::enforceCurrentPageAccess();
 
 $errorMessage = "";
 $successMessage = "";

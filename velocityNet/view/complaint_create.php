@@ -6,6 +6,10 @@
 require_once(__DIR__ . "/../controller/auth_controller.php");
 require_once(__DIR__ . "/../controller/lists_controller.php");
 require_once(__DIR__ . "/../controller/complaint_controller.php");
+require_once(__DIR__ . "/../controller/auth_controller.php");
+
+AuthController::startSession();
+AuthController::enforceCurrentPageAccess();
 
 AuthController::startSession();
 

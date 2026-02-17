@@ -3,6 +3,10 @@
 // Inserts a new employee.
 
 require_once(__DIR__ . "/../controller/employee_controller.php");
+require_once(__DIR__ . "/../controller/auth_controller.php");
+
+AuthController::startSession();
+AuthController::enforceCurrentPageAccess();
 
 $errorMessage = "";
 $successMessage = "";

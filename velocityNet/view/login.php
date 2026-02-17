@@ -6,6 +6,7 @@
 require_once(__DIR__ . "/../controller/auth_controller.php");
 require_once(__DIR__ . "/../model/customerDB.php");
 require_once(__DIR__ . "/../model/employeesDB.php");
+require_once(__DIR__ . "/../model/Database.php");
 
 AuthController::startSession();
 
@@ -44,7 +45,30 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // Try employees first (admin / tech).
         $employee = getEmployeeByEmail($emailText);
 
-        if ($employee != null && $employee->getPasswordHash() === $passwordText) {
+        $employeeOk = false;
+        if ($employee != null) {
+            $employeeOk = AuthController::verifyPasswordAndUpgradeIfNeeded(
+                $passwordText,
+                $employee->getPasswordHash(),
+                $employee->getEmployeeId(),
+                function($id, $newHash) {
+                    // employeesDB will hash again if you pass plain text, so write directly.
+                    // We want to store the hash as-is, so call a local update using mysqli.
+                    // Simpler: call updateEmployeePassword with the plain text handled elsewhere.
+                    // Here we write the hash using a small direct query.
+                    $db = new Database();
+                    $conn = $db->getDbConn();
+                    if ($conn == false) return false;
+                    $sql = "update employees set employee_password = ? where employee_id = ?";
+                    $stmt = mysqli_prepare($conn, $sql);
+                    if ($stmt == false) return false;
+                    mysqli_stmt_bind_param($stmt, "si", $newHash, $id);
+                    return mysqli_stmt_execute($stmt);
+                }
+            );
+        }
+
+        if ($employeeOk) {
 
             $level = strtolower(trim($employee->getRole()));
 
@@ -69,7 +93,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             // Try customer login.
             $customer = getCustomerByEmail($emailText);
 
-            if ($customer != null && $customer->getPasswordHash() === $passwordText) {
+            $customerOk = false;
+            if ($customer != null) {
+                $customerOk = AuthController::verifyPasswordAndUpgradeIfNeeded(
+                    $passwordText,
+                    $customer->getPasswordHash(),
+                    $customer->getCustomerId(),
+                    function($id, $newHash) {
+                        $db = new Database();
+                        $conn = $db->getDbConn();
+                        if ($conn == false) return false;
+                        $sql = "update customer set customer_password = ? where customer_id = ?";
+                        $stmt = mysqli_prepare($conn, $sql);
+                        if ($stmt == false) return false;
+                        mysqli_stmt_bind_param($stmt, "si", $newHash, $id);
+                        return mysqli_stmt_execute($stmt);
+                    }
+                );
+            }
+
+            if ($customerOk) {
 
                 $_SESSION["user_type"] = "customer";
                 $_SESSION["user_id"] = (int)$customer->getCustomerId();

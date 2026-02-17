@@ -6,6 +6,7 @@
 
 require_once(__DIR__ . "/Database.php");
 require_once(__DIR__ . "/Employee.php");
+require_once(__DIR__ . "/../controller/auth_controller.php");
 
 class EmployeeDB {
 
@@ -89,6 +90,8 @@ class EmployeeDB {
         if ($conn == false) return false;
 
         
+        $passwordHash = AuthController::hashPassword($passwordText);
+
         $sql = "insert into employees
                 (email, first_name, last_name, role, employee_password)
                 values (?, ?, ?, ?, ?)";
@@ -96,7 +99,7 @@ class EmployeeDB {
         $statement = mysqli_prepare($conn, $sql);
         if ($statement == false) return false;
 
-        mysqli_stmt_bind_param($statement, "sssss", $emailText, $firstNameText, $lastNameText, $roleText, $passwordText);
+        mysqli_stmt_bind_param($statement, "sssss", $emailText, $firstNameText, $lastNameText, $roleText, $passwordHash);
         return mysqli_stmt_execute($statement);
     }
 
@@ -129,6 +132,8 @@ class EmployeeDB {
         $conn = $db->getDbConn();
         if ($conn == false) return false;
 
+        $passwordHash = AuthController::hashPassword($passwordText);
+
         /*
             SQL updates the password for one employee.
         */
@@ -139,7 +144,7 @@ class EmployeeDB {
         $statement = mysqli_prepare($conn, $sql);
         if ($statement == false) return false;
 
-        mysqli_stmt_bind_param($statement, "si", $passwordText, $employeeIdNumber);
+        mysqli_stmt_bind_param($statement, "si", $passwordHash, $employeeIdNumber);
         return mysqli_stmt_execute($statement);
     }
 
